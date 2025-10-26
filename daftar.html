@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daftar Pegawai</title>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<script src="firebase-config.js"></script>
+</head>
+<body>
+  <h2>Daftar Pegawai Baru</h2>
+  <input id="nama" type="text" placeholder="Nama Lengkap"><br>
+  <input id="email" type="email" placeholder="Email"><br>
+  <input id="password" type="password" placeholder="Password"><br>
+  <button id="daftarBtn">Daftar</button>
+
+  <script>
+    document.getElementById("daftarBtn").addEventListener("click", async () => {
+      const nama = document.getElementById("nama").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+
+      try {
+        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        const uid = userCredential.user.uid;
+
+        await db.collection("users").doc(uid).set({
+          nama: nama,
+          email: email,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        alert("Pendaftaran berhasil! Silakan login.");
+        window.location.href = "index.html";
+      } catch (error) {
+        alert("Gagal daftar: " + error.message);
+      }
+    });
+  </script>
+</body>
+</html>
