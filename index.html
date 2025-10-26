@@ -1,222 +1,42 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Laporan Lembur Bulanan</title>
-
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#667eea,#764ba2);color:#333;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-    .container{background:white;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.1);padding:20px;max-width:800px;width:100%;display:none}
-    h1{text-align:center;margin-bottom:20px;color:#4a4a4a}
-    form{display:grid;gap:10px;margin-bottom:20px}
-    input,select,button{padding:10px;border:1px solid #ccc;border-radius:8px;font-size:14px}
-    button{background:#667eea;color:white;border:none;cursor:pointer;transition:.2s}
-    button:hover{background:#5563d1}
-    table{width:100%;border-collapse:collapse;margin-top:20px}
-    th,td{border:1px solid #ddd;padding:8px;text-align:center;font-size:13px}
-    th{background:#f4f4f4}
-    .logout-btn{background:#f44336;color:white;padding:8px 14px;border:none;border-radius:8px;float:right}
-    .logout-btn:hover{background:#d32f2f}
-    #loginPage{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;color:white}
-    #loginPage input{margin:8px;padding:10px;width:240px;border-radius:6px;border:none}
-    #loginPage button{padding:10px 20px;margin-top:10px;background:#667eea;border:none;border-radius:6px;color:white;cursor:pointer}
-    #loginPage button:hover{background:#5563d1}
-    #toggleForm{margin-top:10px;font-size:13px;color:#ddd;cursor:pointer}
-    #toggleForm:hover{color:#fff;text-decoration:underline}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login Pegawai</title>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<script src="firebase-config.js"></script>
 </head>
 <body>
+  <h2>Login Pegawai</h2>
+  <input id="email" type="email" placeholder="Email"><br>
+  <input id="password" type="password" placeholder="Password"><br>
+  <button id="loginBtn">Login</button>
+  <p>Belum punya akun? <a href="daftar.html">Daftar di sini</a></p>
 
-  <!-- LOGIN / REGISTER PAGE -->
-  <div id="loginPage">
-    <h2 id="formTitle">Login Pegawai</h2>
-    <input type="email" id="emailLogin" placeholder="Email">
-    <input type="password" id="passwordLogin" placeholder="Password">
-    <input type="text" id="namaBaru" placeholder="Nama Pegawai" style="display:none">
-    <button onclick="submitForm()">Login</button>
-    <p id="loginError" style="color:#ffcccc;margin-top:10px;"></p>
-    <span id="toggleForm" onclick="toggleFormMode()">Belum punya akun? Daftar disini</span>
-  </div>
-
-  <!-- DASHBOARD -->
-  <div class="container">
-    <button class="logout-btn" onclick="logout()">Logout</button>
-    <h1>Laporan Lembur Bulanan</h1>
-    <form id="formLembur">
-      <label>Nama Pegawai:</label>
-      <input type="text" id="namaPegawai" readonly>
-
-      <label>Tanggal:</label>
-      <input type="date" id="tanggalLembur" required>
-
-      <label>Jam Mulai:</label>
-      <input type="time" id="jamMulai" required>
-
-      <label>Jam Selesai:</label>
-      <input type="time" id="jamSelesai" required>
-
-      <label>Keterangan:</label>
-      <input type="text" id="keterangan" placeholder="Contoh: Pengiriman dokumen ke cabang">
-
-      <button type="submit">Simpan Lembur</button>
-    </form>
-
-    <table id="tabelLembur">
-      <thead>
-        <tr>
-          <th>Tanggal</th>
-          <th>Jam Mulai</th>
-          <th>Jam Selesai</th>
-          <th>Durasi (Jam)</th>
-          <th>Keterangan</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-
-  <!-- ✅ FIREBASE (v11 MODULAR) -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { 
-      getAuth, 
-      onAuthStateChanged, 
-      signInWithEmailAndPassword, 
-      createUserWithEmailAndPassword,
-      signOut 
-    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-    import { 
-      getFirestore, 
-      doc, 
-      setDoc, 
-      getDoc 
-    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-
-    // 🔧 Konfigurasi Firebase kamu
-    const firebaseConfig = {
-      apiKey: "AIzaSyC16YQ0Ii5HFKSLiSEWsnVpjPs7LFjM-hM",
-      authDomain: "lemburan-28b0a.firebaseapp.com",
-      projectId: "lemburan-28b0a",
-      storageBucket: "lemburan-28b0a.appspot.com",
-      messagingSenderId: "802947787984",
-      appId: "1:802947787984:web:c27731114f9193892602d5"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
-    // 🔄 State global
-    let currentNama = "";
-    let isRegisterMode = false;
-
-    // 🧭 Auth listener
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const docRef = doc(db, "users", user.uid);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          currentNama = docSnap.data().nama;
-          document.getElementById("namaPegawai").value = currentNama;
-          document.getElementById("loginPage").style.display = "none";
-          document.querySelector(".container").style.display = "block";
-          renderTabel();
-        } else {
-          alert("Data pegawai tidak ditemukan di Firestore!");
-          logout();
-        }
-      } else {
-        document.querySelector(".container").style.display = "none";
-        document.getElementById("loginPage").style.display = "flex";
-      }
-    });
-
-    // 🔐 Fungsi Login / Register
-    async function submitForm() {
-      const email = document.getElementById("emailLogin").value;
-      const pass = document.getElementById("passwordLogin").value;
-      const nama = document.getElementById("namaBaru").value;
-      const errorEl = document.getElementById("loginError");
-      errorEl.innerText = "";
+  <script>
+    document.getElementById("loginBtn").addEventListener("click", async () => {
+      const email = email.value.trim();
+      const password = password.value.trim();
 
       try {
-        if (isRegisterMode) {
-          const userCred = await createUserWithEmailAndPassword(auth, email, pass);
-          await setDoc(doc(db, "users", userCred.user.uid), { nama });
-          alert("Akun berhasil dibuat, silakan login.");
-          toggleFormMode();
-        } else {
-          await signInWithEmailAndPassword(auth, email, pass);
-        }
-      } catch (err) {
-        errorEl.innerText = "Login gagal: " + err.message;
+        const userCredential = await auth.signInWithEmailAndPassword(email, password);
+        const uid = userCredential.user.uid;
+
+        const docSnap = await db.collection("users").doc(uid).get();
+        const namaPegawai = docSnap.exists ? docSnap.data().nama : "Tanpa Nama";
+
+        localStorage.setItem("namaPegawai", namaPegawai);
+        localStorage.setItem("uid", uid);
+
+        alert(`Selamat datang, ${namaPegawai}!`);
+        window.location.href = "dashboard.html";
+      } catch (error) {
+        alert("Login gagal: " + error.message);
       }
-    }
-
-    // 🔄 Ganti antara login / register
-    window.toggleFormMode = function() {
-      isRegisterMode = !isRegisterMode;
-      const title = document.getElementById("formTitle");
-      const namaInput = document.getElementById("namaBaru");
-      const btn = document.querySelector("#loginPage button");
-      const toggleText = document.getElementById("toggleForm");
-
-      if (isRegisterMode) {
-        title.innerText = "Daftar Pegawai Baru";
-        namaInput.style.display = "block";
-        btn.innerText = "Daftar";
-        toggleText.innerText = "Sudah punya akun? Login disini";
-      } else {
-        title.innerText = "Login Pegawai";
-        namaInput.style.display = "none";
-        btn.innerText = "Login";
-        toggleText.innerText = "Belum punya akun? Daftar disini";
-      }
-    };
-
-    // 🚪 Logout
-    window.logout = function() {
-      signOut(auth);
-    };
-
-    // 🕒 Hitung durasi lembur
-    function hitungDurasi(mulai, selesai) {
-      const [h1, m1] = mulai.split(":").map(Number);
-      const [h2, m2] = selesai.split(":").map(Number);
-      let jam = h2 + m2 / 60 - (h1 + m1 / 60);
-      if (jam < 0) jam += 24;
-      return jam.toFixed(2);
-    }
-
-    // 💾 Simpan data lembur ke localStorage
-    document.getElementById("formLembur").addEventListener("submit", function (e) {
-      e.preventDefault();
-      const tgl = document.getElementById("tanggalLembur").value;
-      const mulai = document.getElementById("jamMulai").value;
-      const selesai = document.getElementById("jamSelesai").value;
-      const ket = document.getElementById("keterangan").value;
-
-      const durasi = hitungDurasi(mulai, selesai);
-      const dataLembur = JSON.parse(localStorage.getItem("lembur_" + currentNama)) || [];
-      dataLembur.push({ tgl, mulai, selesai, durasi, ket });
-      localStorage.setItem("lembur_" + currentNama, JSON.stringify(dataLembur));
-      renderTabel();
-      this.reset();
     });
-
-    // 📊 Tampilkan data lembur
-    function renderTabel() {
-      const tbody = document.querySelector("#tabelLembur tbody");
-      tbody.innerHTML = "";
-      const data = JSON.parse(localStorage.getItem("lembur_" + currentNama)) || [];
-      data.forEach((d) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${d.tgl}</td><td>${d.mulai}</td><td>${d.selesai}</td><td>${d.durasi}</td><td>${d.ket}</td>`;
-        tbody.appendChild(tr);
-      });
-    }
   </script>
 </body>
 </html>
