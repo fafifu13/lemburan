@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Lembur</title>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<script src="firebase-config.js"></script>
+</head>
+<body>
+  <h2>Dashboard Lembur</h2>
+  <p>Halo, <span id="namaPegawai"></span></p>
+
+  <h3>Input Lembur</h3>
+  <input id="tanggal" type="date"><br>
+  <input id="jamMulai" type="time"><br>
+  <input id="jamSelesai" type="time"><br>
+  <textarea id="keterangan" placeholder="Keterangan lembur"></textarea><br>
+  <button id="simpanBtn">Simpan</button>
+
+  <h3>Riwayat Lembur</h3>
+  <ul id="riwayatList"></ul>
+
+  <button id="logoutBtn">Logout</button>
+
+  <script>
+    const namaPegawai = localStorage.getItem("namaPegawai");
+    const uid = localStorage.getItem("uid");
+    document.getElementById("namaPegawai").innerText = namaPegawai ?? "-";
+
+    const loadRiwayat = async () => {
+      const list = document.getElementById("riwayatList");
+      list.innerHTML = "";
+
+      const snapshot = await db.collection("users").doc(uid).collection("lembur").orderBy("tanggal", "desc").get();
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const li = document.createElement("li");
+        li.textContent = `${data.tanggal} | ${data.jamMulai}-${data.jamSelesai} | ${data.keterangan}`;
+        list.appendChild(li);
+      });
+    };
+
+    document.getElementById("simpanBtn").addEventListener("click", async () => {
+      const tanggal = document.getElementById("tanggal").value;
+      const jamMulai = document.getElementById("jamMulai").value;
+      const jamSelesai = document.getElementById("jamSelesai").value;
+      const keterangan = document.getElementById("keterangan").value;
+
+      if (!tanggal || !jamMulai || !jamSelesai) {
+        alert("Isi semua data lembur!");
+        return;
+      }
+
+      await db.collection("users").doc(uid).collection("lembur").add({
+        tanggal, jamMulai, jamSelesai, keterangan,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      alert("Data lembur tersimpan!");
+      await loadRiwayat();
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      auth.signOut();
+      localStorage.clear();
+      window.location.href = "index.html";
+    });
+
+    loadRiwayat();
+  </script>
+</body>
+</html>
